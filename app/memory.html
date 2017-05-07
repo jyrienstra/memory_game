@@ -7,20 +7,20 @@
     <link rel="stylesheet" type="text/css" href="memory.css">
 </head>
 
-<body ng-controller="boardCreator" ng-init = "initGame(6)">
+<body ng-controller="boardCreator">
 <header>
     <h2>Javascript memory</h2>
-    <div>Verlopen tijd: <span id="tijd">0</span> seconden.<br/>
-        Gevonden kaart-paren: <span id="gevonden">0</span><br>
-        Resterende toontijd: <br>
+    <div>Elapsed time: <span id="time">{{currentTime}}</span> seconds.<br/>
+        Found pairs: <span id="found">0</span><br>
+        Remaining show time: <br>
         <button id="myTime"><div id="timeLeft"></div></button><br/>
     </div>
 
-    <div class="gameGrid" ng-controller="boardInteraction">
+    <div class="gameGrid" ng-controller="boardInteraction" ng-init="init(boardSize)">
         <div class="gameRows" ng-repeat="row in gameRows">
             <div class="gameCols" ng-repeat="col in gameCols">
-                <div class="gameField" value="inactive">
-                    <span class="gameValue" ng-click="clickField(gameGrid[row][col])">
+                <div class="gameField">
+                    <span class="gameValue" data="exampleData" value="inactive" ng-click="clickField($event, gameGrid[row][col], row, col)">
                         {{gameGrid[row][col]}}
                     </span>
                </div>
@@ -29,25 +29,16 @@
     </div>
 </header>
 
-<div id="main">
+<div id="main" ng-controller="boardInteraction">
     <div>
         <table id="speelveld"></table>
 
         <table id="meta">
             <tr><td>
-                <b>Top vijf</b>
+                <b>Top five</b>
                 <ol id="topscores"></ol>
-                <b>Gemiddelde speeltijd:</b> <span id="gemiddeld">0s (+0s)</span><br/><br/>
-                <b>Karakter op kaarten:</b>
-                <select name="character" id="character">
-                    <option value="*">*</option>
-                    <option value="#">#</option>
-                    <option value="@">@</option>
-                    <option value="&">&</option>
-                    <option value="%">%</option>
-                    <option value="X">X</option>
-                </select>
-                <br>
+                <ol ng-repeat="score in scores" class="score" >Score: {{score.score}} Time: {{score.time}} seconds</ol>
+                <b>Avarage playing time:</b> <span id="gemiddeld">{{avaragePlayingTime}} seconds</span><br/><br/>
                 <b>Afmeting bord:</b><select name="size" id ="size">
                 <option value=2>2</option>
                 <option value=4>4</option>
@@ -59,20 +50,21 @@
 
                     Kaartkleur
                 </button>
-                <input type="hidden" id="valueinactive" value="ff0000"><input id="styleInactive">
-                    <br>
-                    <button class="jscolor{valueElement:'valueactive', styleElement:'styleActive'}">
-                        Open
-                    </button>
-                    <input type="hidden" id="valueactive" value="008C00"><input id="styleActive">
-                        <br>
-                        <button class="jscolor{valueElement:'valuefound', styleElement:'styleFound'}">
-                            Gevonden
-                        </button>
-                        <input type="hidden" id="valuefound" value="800080"><input id="styleFound">
+                <input type="hidden" id="valueinactive" value="ff0000" custom-on-change="colorChange"><input id="styleInactive">
+                <br>
+                <button class="jscolor{valueElement:'valueactive', styleElement:'styleActive'}">
+                    Open
+                </button>
+                <input type="hidden" id="valueactive" value="ffa500" custom-on-change="colorChange"><input id="styleActive">
+                <br>
+                <button class="jscolor{valueElement:'valuefound', styleElement:'styleFound'}">
+                    Gevonden
+                </button>
+                <input type="hidden" id="valuefound" value="008000" custom-on-change="colorChange"><input id="styleFound">
             </td></tr>
-            <tr><td>
-                <button id="opnieuw">Nieuw Spel</button>
+            <tr >
+                <td>
+                <button id="opnieuw" ng-click="newGame()">Nieuw Spel</button>
             </td></tr>
         </table>
 
