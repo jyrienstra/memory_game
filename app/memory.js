@@ -15,6 +15,7 @@ app1.service('sharedProperties', function() {
     var valueinactive = "red";
     var valueactive = "orange";
     var valuefound = "green";
+    var isGameStarted = false;
 
     return {
         getBoardSize: function() {
@@ -49,6 +50,7 @@ app1.service('sharedProperties', function() {
         },
         setGameFinished: function (boolean) {
             gameFinished = boolean;
+            isGameStarted = false;
         },
         isGameFinished: function () {
             return gameFinished;
@@ -70,8 +72,13 @@ app1.service('sharedProperties', function() {
         },
         getValueInactiveColor:function () {
             return valueinactive;
+        },
+        setGameStarted: function (boolean) {
+            isGameStarted = boolean;
+        },
+        isGameStarted: function () {
+            return isGameStarted;
         }
-
     }
 });
 
@@ -91,12 +98,10 @@ app1.controller('boardCreator', function ($scope, $timeout, sharedProperties) {
     $scope.scores = [];
     $scope.avaragePlayingTime = 0;
 
-    // $scope.currentTime = 0;
-    //http://jsfiddle.net/xuUHS/1/
-
     //When page is loaded initGame is called
-    $scope.newGame = function () {
+    $scope.newGame = function (value) {
         sharedProperties.setGameFinished(false);
+        $scope.resetColors();
         sharedProperties.setClickedFields([]);
         sharedProperties.setFoundCombinations([]);
         $timeout.cancel(timer); //cancel old timer
@@ -105,11 +110,16 @@ app1.controller('boardCreator', function ($scope, $timeout, sharedProperties) {
 
 
         //Set scores & avarage playing time
-        $scope.scores = sharedProperties.getScores();
         $scope.avaragePlayingTime = calculateAvaragePlayingTime();
 
         //Set boardsize
-        $scope.boardSize = angular.element('#size').val();
+        if(value){
+            //use param setter (ng-init call)
+            $scope.boardSize = value;
+        }else{
+            //get from selector
+            $scope.boardSize = angular.element('#size').val();
+        }
         sharedProperties.setBoardSize($scope.boardSize);
 
 
@@ -120,12 +130,7 @@ app1.controller('boardCreator', function ($scope, $timeout, sharedProperties) {
         $scope.characters = []; //memory charachters
         $scope.currentTime = 0;
 
-        //Reset colors of grid
-        $scope.updateColors();
-
         $scope.setCharachters($scope.boardSize);
-        console.log($scope.characters);
-
         //Create & fill grid
         for (var i = 0; i < $scope.boardSize; i++) {
             $scope.gameRows[i] = i;
@@ -182,10 +187,13 @@ app1.controller('boardCreator', function ($scope, $timeout, sharedProperties) {
     var increaseTime = function(){
         timer = $timeout(function () {
             if(!sharedProperties.isGameFinished()){
-                $scope.currentTime++;
-                sharedProperties.setTime($scope.currentTime);
                 increaseTime();
+                if(sharedProperties.isGameStarted()){
+                    $scope.currentTime++;
+                    sharedProperties.setTime($scope.currentTime);
+                }
             }
+            $scope.scores = sharedProperties.getScores(); //update top 5
         }, 1000);
     };
 
@@ -197,16 +205,39 @@ app1.controller('boardCreator', function ($scope, $timeout, sharedProperties) {
     }
 
     $scope.updateColors = function () {
-        angular.element('.gameValue').css('background-color', sharedProperties.getValueInactiveColor());
+        angular.element('.gameField').css('background-color', sharedProperties.getValueInactiveColor());
+
+        var foundCombinations = sharedProperties.getFoundcombinations();
+
+        var clickedFields = sharedProperties.getClickedFields();
+        for(var i=0; i<clickedFields.length; i++){
+            angular.element(clickedFields[i].event.currentTarget).css('background-color', sharedProperties.getValueActiveColor());
+        }
+        for(var i=0; i< foundCombinations.length; i++){
+            console.log("tering raar weer")
+            angular.element(foundCombinations[i].event1.currentTarget).css('background-color', sharedProperties.getValueFoundColor());
+            angular.element(foundCombinations[i].event2.currentTarget).css('background-color', sharedProperties.getValueFoundColor());
+        }
+    }
+
+    $scope.resetColors = function () {
+        angular.element('.gameField').css('background-color', sharedProperties.getValueInactiveColor());
+        angular.element('.gameValue').css('opacity', '0');
+
         var foundCombinations = sharedProperties.getFoundcombinations();
 
         var clickedFields = sharedProperties.getClickedFields();
         for(var i=0; i<clickedFields.length; i++){
             angular.element(clickedFields[i].event.currentTarget).css('background-color', sharedProperties.getValueInactiveColor());
+            angular.element(clickedFields[i].event.currentTarget).css('opacity', '0');
         }
         for(var i=0; i< foundCombinations.length; i++){
-            angular.element(foundCombinations[i].event1.currentTarget).css('background-color', sharedProperties.getValueFoundColor());
-            angular.element(foundCombinations[i].event2.currentTarget).css('background-color', sharedProperties.getValueFoundColor());
+            console.log("tering raar weer")
+            angular.element(foundCombinations[i].event1.currentTarget).css('background-color', sharedProperties.getValueInactiveColor());
+            angular.element(foundCombinations[i].event1.currentTarget).css('opacity', '0');
+            angular.element(foundCombinations[i].event2.currentTarget).css('background-color', sharedProperties.getValueInactiveColor());
+            angular.element(foundCombinations[i].event2.currentTarget).css('opacity', '0');
+
         }
     }
 });
@@ -216,6 +247,7 @@ app1.controller('boardInteraction', function ($scope, $timeout, sharedProperties
         var clickedFields = [];
         var foundCombinations = [];
         var top5 = [];
+        var isNewGame = false;
 
         var reset = function(){
             sharedProperties.setFoundCombinations(foundCombinations);
@@ -224,6 +256,8 @@ app1.controller('boardInteraction', function ($scope, $timeout, sharedProperties
         };
 
         $scope.clickField = function ($event, char, row, col) {
+            sharedProperties.setGameStarted(true);
+
             if (foundCombinations.indexOf(char) !== -1) {
                 console.log("combination already exists or clicking same field again");
             } else {
@@ -263,7 +297,7 @@ app1.controller('boardInteraction', function ($scope, $timeout, sharedProperties
                 }
                 clickedFields.length = 0; //clear array
                 if(gameIsFinished()){
-                    showResults();
+                    showResults(askForName());
                 }
             }
         }
@@ -271,20 +305,54 @@ app1.controller('boardInteraction', function ($scope, $timeout, sharedProperties
         var gameIsFinished = function(){
             if(foundCombinations.length == ((sharedProperties.getBoardSize()*sharedProperties.getBoardSize())/2)){
                 sharedProperties.setGameFinished(true);
+                reset();
                 return true;
             }
             return false;
         };
 
-        var showResults = function () {
-            var score = {
-                score: sharedProperties.getBoardSize(),
-                time: sharedProperties.getTime()
-            };
-            top5.push(score);
-            sharedProperties.setScores(top5);
-            reset();
-            console.log("show results");
+
+        var askForName = function () {
+            var name = prompt("Please enter your name", "Player");
+
+            if (name == null || name == "") {
+                console.log("nunll/");
+            }
+            return name;
+        }
+
+        var showResults = function (name) {
+            addTop5(name);
+        };
+
+        var addTop5 = function (name) {
+            if(name != null) {
+                var score = {
+                    name: name,
+                    score: sharedProperties.getBoardSize(),
+                    time: sharedProperties.getTime()
+                };
+                top5.push(score);
+                orderTop5();
+                sharedProperties.setScores(top5);
+            }
+        }
+
+        //bubblesort, not very effective but only index=5
+        var orderTop5 = function () {
+            var stopFlag = true;
+            for (var j =0; (j < top5.length) && (stopFlag==true); j++){
+                stopFlag = false;
+                for (var i = 0; i < top5.length - 1; i++) {
+                    var temp;
+                    temp = top5[i];
+                    if (top5[i + 1].time < top5[i].time) {
+                        top5[i] = top5[i + 1];
+                        top5[i + 1] = temp;
+                        stopFlag = true;
+                    }
+                }
+            }
         };
 
 
@@ -294,7 +362,11 @@ app1.controller('boardInteraction', function ($scope, $timeout, sharedProperties
             var maxTime =500;
             var timeLeftWidth = 185; //185px
             var fadeTimer = function () {
-                if(currentTime <= maxTime){
+                if(clickedFields.length>0){
+                    //If a new field is clicked, quit looping
+                    currentTime = maxTime;
+                }
+                if(currentTime < maxTime){
                     currentTime+=5;
                     timeLeftWidth-=5;
                     angular.element('#timeLeft').css('width', timeLeftWidth);

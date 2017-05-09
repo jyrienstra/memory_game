@@ -7,7 +7,7 @@
     <link rel="stylesheet" type="text/css" href="memory.css">
 </head>
 
-<body ng-controller="boardCreator">
+<body ng-controller="boardCreator" ng-init="newGame(2)">
 <header>
     <h2>Javascript memory</h2>
     <div>Elapsed time: <span id="time">{{currentTime}}</span> seconds.<br/>
@@ -16,7 +16,7 @@
         <button id="myTime"><div id="timeLeft"></div></button><br/>
     </div>
 
-    <div class="gameGrid" ng-controller="boardInteraction" ng-init="init(boardSize)">
+    <div class="gameGrid" ng-controller="boardInteraction">
         <div class="gameRows" ng-repeat="row in gameRows">
             <div class="gameCols" ng-repeat="col in gameCols">
                 <div class="gameField">
@@ -37,7 +37,7 @@
             <tr><td>
                 <b>Top five</b>
                 <ol id="topscores"></ol>
-                <ol ng-repeat="score in scores" class="score" >Score: {{score.score}} Time: {{score.time}} seconds</ol>
+                <ol ng-repeat="score in scores" class="score" ><b>{{$index+1}}.</b> {{score.name}}: {{score.time}} seconds </ol>
                 <b>Avarage playing time:</b> <span id="gemiddeld">{{avaragePlayingTime}} seconds</span><br/><br/>
                 <b>Afmeting bord:</b><select name="size" id ="size">
                 <option value=2>2</option>
@@ -46,7 +46,7 @@
             </select>
             </td></tr>
             <tr><td>
-                <button class="jscolor{valueElement:'valueinactive', styleElement:'styleInactive', onFineChange:'change()'}">
+                <button class="jscolor{valueElement:'valueinactive', styleElement:'styleInactive'}">
 
                     Kaartkleur
                 </button>
